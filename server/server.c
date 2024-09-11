@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
              * - 파이프를 이용한 부모 프로세스와의 통신 */
             int my_num = client_num;
             int n_client, n_center;
-            int mesg_client[BUFSIZ], mesg_center[BUFSIZ];
+            char mesg_client[BUFSIZ], mesg_center[BUFSIZ];
             
             /* 네트워크 주소 출력 */
             inet_ntop(AF_INET, &clientaddr.sin_addr, mesg, BUFSIZ);
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
                 else {
                     printf("%d번 통신 서버 : %s\n", my_num, mesg_client);
                     /* 클라이언트에서 받은 데이터 중앙 서버로 전송 */
-                    write(pipefds[1][1], mesg_client, n_client);
+                    write(pipefds[my_num][1][1], mesg_client, n_client);
                 }
 
                 /* 중앙 서버에서 입력 받은 신호 처리 */
