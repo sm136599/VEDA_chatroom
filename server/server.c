@@ -27,6 +27,7 @@ volatile sig_atomic_t data_from_center = 0;
 int client_num = 0;
 
 void init_server();
+void set_nonblock(int fd);
 
 void child_zombie_handler(int signo) {
     while (waitpid(0, NULL, WNOHANG) == 0);
@@ -100,7 +101,7 @@ int main(int argc, char** argv) {
     }
 
     /* 서버 소켓 nonblock 처리 */
-    fcntl(ssock, F_SETFL, O_NONBLOCK);
+    set_nonblock(ssock);
 
     clen = sizeof(clientaddr);
     while (1) {
@@ -116,6 +117,9 @@ int main(int argc, char** argv) {
             }
         }
         else if (csock > 0) {
+            /* 클라이언트가 연결 됬을 때 */
+
+            /* 파이프 열기 */
             pipe2(child_server[client_num].from_center_pipe, O_NONBLOCK); // 중앙서버 -> 통신서버
             pipe2(child_server[client_num].to_center_pipe, O_NONBLOCK); // 통신서버 -> 중앙서버 
             
@@ -142,7 +146,7 @@ int main(int argc, char** argv) {
                 close(child_server[my_num].to_center_pipe[0]); // 중앙서버로 보내는 파이프
                 
                 /* 클라이언트 소켓 nonblock 처리 */
-                fcntl(csock, F_SETFL, O_NONBLOCK);
+                set_nonblock(csock);
 
                 while (1) {
                     n_client = read(csock, mesg_client, BUFSIZ);
@@ -162,14 +166,14 @@ int main(int argc, char** argv) {
                     else {
                         if (strcmp(mesg_client, "") != 0) {
                             printf("통신 서버 : %s\n", mesg_client);
+                            /* 클라이언트에서 받은 데이터 중앙 서버로 전송 */
+                            kill(getppid(), SIGUSR1);
+                            write(child_server[my_num].to_center_pipe[1], mesg_client, n_client);
                         }
-                        /* 클라이언트에서 받은 데이터 중앙 서버로 전송 */
-                        kill(getppid(), SIGUSR1);
-                        write(child_server[my_num].to_center_pipe[1], mesg_client, n_client);
                     }
 
                     /* 중앙 서버에서 입력 받은 신호 처리 */
-                    if (data_from_center) {
+                    while (data_from_center) {
                         n_center = read(child_server[my_num].from_center_pipe[0], mesg_center, BUFSIZ);
                         data_from_center = 0;
                         if (n_center < 0) {
@@ -182,12 +186,11 @@ int main(int argc, char** argv) {
                         else if (n_center > 0) {
                             if (strcmp(mesg_center, "") != 0) {
                                 printf("Received from center : %s\n", mesg_center);
+                                /* 서버에서 받은 메시지 클라이언트로 전송 */
+                                write(csock, mesg_center, n_center);
+                                data_from_center = 0;
                             }
-                            /* 서버에서 받은 메시지 클라이언트로 전송 */
-                            kill(getppid(), SIGUSR1);
-                            write(csock, mesg_center, n_center);
                         }
-                        data_from_center = 0;
                     }
                 }
                 exit(EXIT_SUCCESS);
@@ -207,7 +210,6 @@ int main(int argc, char** argv) {
         }
         
         /* 통신 서버의 입력을 받는다. */
-        //printf("%d\n", data_from_connecting);
         for (int i = 0; i < client_num; i++) {
             n = read(child_server[i].to_center_pipe[0], mesg, BUFSIZ);
             if (n < 0) {
@@ -215,27 +217,29 @@ int main(int argc, char** argv) {
                     perror("read failed");
                     exit(EXIT_FAILURE);
                 }
+                continue;
             }
             else if (n == 0) {
                 // 통신 서버 종료
                 // TODO : child_server 배열 업데이트 
-                printf("client server stoped\n");
+                printf("%d client server stoped\n", i);
                 for (int j = i; j < client_num - 1; j++) {
-                    child_server[i] = child_server[i+1];
+                    child_server[j] = child_server[j+1];
                 }
                 client_num--;
             }
             else if (data_from_connecting && n > 0) {
                 if (strcmp(mesg, "") != 0) {
                     printf("Received from %d connecting server : %s\n", i, mesg);
+                    /* 통신 서버에서 전송된 메시지 나머지 통신 서버에 전송 */
+                    for (int j = 0; j < client_num; j++) {
+                        if (i != j) {
+                            kill(child_server[j].pid, SIGUSR2);
+                            write(child_server[j].from_center_pipe[1], mesg, n);
+                        }
+                    }
+                    data_from_connecting = 0;
                 }
-                /* 통신 서버에서 전송된 메시지 나머지 통신 서버에 전송 */
-                for (int j = 0; j < client_num; j++) {
-                    if (i == j) continue;
-                    kill(child_server[j].pid, SIGUSR2);
-                    write(child_server[j].from_center_pipe[1], mesg, n);
-                }
-                data_from_connecting = 0;
             }
         }
     }
@@ -266,4 +270,9 @@ void init_server() {
     }
     /* 권한 변경 */
     umask(0);
+}
+
+void set_nonblock(int fd) {
+    int flags = fcntl(fd, F_GETFL);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
