@@ -110,11 +110,7 @@ int main(int argc, char** argv) {
         csock = accept(ssock, (struct sockaddr*)&clientaddr, &clen);
 
         if (csock == -1) {
-            if (!(errno == EAGAIN || 
-                  errno == EWOULDBLOCK || 
-                  errno == EINTR || 
-                  errno == ECONNABORTED ||
-                  errno == EBADF)) {
+            if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
                 perror("accept failed");
                 break;
             }
@@ -153,7 +149,7 @@ int main(int argc, char** argv) {
 
                     /* 클라이언트에서 입력 받은 신호 처리 */
                     if (n_client < 0) {
-                        if (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR || errno == EBADF)) {
+                        if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
                             perror("read failed");
                             exit(EXIT_FAILURE);
                         }
@@ -165,7 +161,7 @@ int main(int argc, char** argv) {
                     }
                     else {
                         if (strcmp(mesg_client, "") != 0) {
-                            printf("%d번 통신 서버 : %s\n", my_num, mesg_client);
+                            printf("통신 서버 : %s\n", mesg_client);
                         }
                         /* 클라이언트에서 받은 데이터 중앙 서버로 전송 */
                         kill(getppid(), SIGUSR1);
@@ -185,7 +181,7 @@ int main(int argc, char** argv) {
                         }
                         else if (n_center > 0) {
                             if (strcmp(mesg_center, "") != 0) {
-                                printf("%d번 통신 서버 - Received from center : %s\n", my_num, mesg_center);
+                                printf("Received from center : %s\n", mesg_center);
                             }
                             /* 서버에서 받은 메시지 클라이언트로 전송 */
                             kill(getppid(), SIGUSR1);
@@ -212,38 +208,36 @@ int main(int argc, char** argv) {
         
         /* 통신 서버의 입력을 받는다. */
         //printf("%d\n", data_from_connecting);
-        if (data_from_connecting) {
-            for (int i = 0; i < client_num; i++) {
-                n = read(child_server[i].to_center_pipe[0], mesg, BUFSIZ);
-                if (n < 0) {
-                    if (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
-                        perror("read failed");
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else if (n == 0) {
-                    // 통신 서버 종료
-                    // TODO : child_server 배열 업데이트 
-                    printf("client server stoped\n");
-                    for (int j = i; j < client_num - 1; j++) {
-                        child_server[i] = child_server[i+1];
-                    }
-                }
-                else if (n > 0) {
-                    if (strcmp(mesg, "") != 0) {
-                        printf("Received from %d connecting server : %s\n", i, mesg);
-                    }
-                    /* 통신 서버에서 전송된 메시지 나머지 통신 서버에 전송 */
-                    for (int j = 0; j < client_num; j++) {
-                        if (i == j) continue;
-                        kill(child_server[j].pid, SIGUSR2);
-                        write(child_server[j].from_center_pipe[1], mesg, n);
-                    }
+        for (int i = 0; i < client_num; i++) {
+            n = read(child_server[i].to_center_pipe[0], mesg, BUFSIZ);
+            if (n < 0) {
+                if (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
+                    perror("read failed");
+                    exit(EXIT_FAILURE);
                 }
             }
-            data_from_connecting = 0;
+            else if (n == 0) {
+                // 통신 서버 종료
+                // TODO : child_server 배열 업데이트 
+                printf("client server stoped\n");
+                for (int j = i; j < client_num - 1; j++) {
+                    child_server[i] = child_server[i+1];
+                }
+                client_num--;
+            }
+            else if (data_from_connecting && n > 0) {
+                if (strcmp(mesg, "") != 0) {
+                    printf("Received from %d connecting server : %s\n", i, mesg);
+                }
+                /* 통신 서버에서 전송된 메시지 나머지 통신 서버에 전송 */
+                for (int j = 0; j < client_num; j++) {
+                    if (i == j) continue;
+                    kill(child_server[j].pid, SIGUSR2);
+                    write(child_server[j].from_center_pipe[1], mesg, n);
+                }
+                data_from_connecting = 0;
+            }
         }
-        
     }
     close(ssock);
     return 0;
