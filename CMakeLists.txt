@@ -9,7 +9,11 @@ include_directories(${CMAKE_SOURCE_DIR}/client/include)
 include_directories(${CMAKE_SOURCE_DIR}/server/include)
 
 set(CLIENT_SOURCES
-    ${CMAKE_SOURCE_DIR}/client/client.c    
+    ${CMAKE_SOURCE_DIR}/client/main.c
+    ${CMAKE_SOURCE_DIR}/client/src/client.c
+    ${CMAKE_SOURCE_DIR}/client/src/connection.c
+    ${CMAKE_SOURCE_DIR}/client/src/signal_handlers.c
+    ${CMAKE_SOURCE_DIR}/client/src/auth.c
 )
 
 set(SERVER_SOURCES
