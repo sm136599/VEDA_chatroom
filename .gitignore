@@ -87,4 +87,4 @@ _deps
 # External projects
 *-prefix/
 
-/build
+build/
