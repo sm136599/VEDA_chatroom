@@ -8,8 +8,8 @@
 
 extern volatile int data_received;
 
-void run_client(int ssock);
-void handle_child_process(int ssock);
-void handle_parent_process(int ssock);
+void run_client(int ssock, const char* username);
+void handle_child_process(int ssock, const char* username);
+void handle_parent_process(int ssock, const char* username);
 
 #endif

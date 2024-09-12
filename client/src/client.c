@@ -7,7 +7,7 @@
 
 volatile sig_atomic_t data_received = 0;
 
-void run_client(int ssock) {
+void run_client(int ssock, const char* username) {
     int child_pid = fork();
 
     if (child_pid < 0) {
@@ -15,16 +15,16 @@ void run_client(int ssock) {
         exit(EXIT_FAILURE);
     }
     else if (child_pid == 0) {
-        handle_child_process(ssock);
+        handle_child_process(ssock, username);
     }
     else {
-        handle_parent_process(ssock);
+        handle_parent_process(ssock, username);
     }
 }
 
-void handle_child_process(int ssock) {
+void handle_child_process(int ssock, const char* username) {
     char mesg[BUFSIZ];
-
+    
     while (1) {
         memset(mesg, 0, BUFSIZ);
         fgets(mesg, BUFSIZ, stdin);
@@ -42,7 +42,7 @@ void handle_child_process(int ssock) {
     exit(EXIT_SUCCESS);
 }
 
-void handle_parent_process(int ssock) {
+void handle_parent_process(int ssock, const char* username) {
     char mesg[BUFSIZ];
     int n;
 
