@@ -39,7 +39,7 @@ void handle_child_process(int ssock, const char* username) {
             exit(EXIT_FAILURE);
         }
     }
-    exit(EXIT_SUCCESS);
+    return;
 }
 
 void handle_parent_process(int ssock, const char* username) {
