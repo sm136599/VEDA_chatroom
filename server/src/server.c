@@ -72,7 +72,6 @@ void run_server() {
             }
             else if (n == 0) {
                 /* 통신 서버 종료 */
-                printf("%d client server stoped\n", i);
                 /* 유저 로그아웃 처리하기 */
                 if (servers[i].user_index >= 0) {
                     connected_user[servers[i].user_index] = 0;
@@ -98,7 +97,6 @@ void run_server() {
                         get_user_from_string(mesg, &user);
 
                         int user_index = login_user(&user);
-                        printf("user_index : %d\n", user_index);
                         if (user_index >= 0) {
                             strcpy(result, "SUCCESS");
                             servers[i].user_index = user_index;
@@ -106,7 +104,6 @@ void run_server() {
                         else {
                             strcpy(result, "FAIL");
                         }
-                        printf("%s\n", result);
                         write(servers[i].from_center_to_connecting_pipe[1], result, BUFSIZ);
                     }
                     else if (strncmp(mesg, "REGISTER", 8) == 0) {
@@ -116,7 +113,6 @@ void run_server() {
                         get_user_from_string(mesg, &user);
 
                         int user_index = register_user(&user);
-                        printf("user_index : %d\n", user_index);
                         if (user_index >= 0) {
                             save_user_data(&user);
                             strcpy(result, "SUCCESS");
@@ -156,7 +152,7 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
     if (client_num >= MAX_CLIENT_NO) {
         fprintf(stderr, "Maximum number of clients reached\n");
         close(csock);
-        return;
+        exit(EXIT_FAILURE);
     }
 
     /* 클라이언트가 연결 됬을 때 */
@@ -224,7 +220,6 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
                         usleep(100000);
                         /* 중앙 서버로 부터 성공/실패 메시지 수신*/
                         read(servers[my_num].from_center_to_connecting_pipe[0], mesg_center, BUFSIZ);
-                        printf("receive from center : %s\n", mesg_center);
                         /* 클라이언트로 성공/실패 메시지 전송 */
                         write(csock, mesg_center, BUFSIZ);
                         
