@@ -19,7 +19,8 @@ volatile int data_from_center = 0;
 int client_num = 0;
 int user_count = 0;
 connecting_server servers[MAX_CLIENT_NO];
-
+user users[1024];
+int connected_user[1024];
 
 void init_server() {
     // make_daemon();
@@ -116,6 +117,7 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
         int n_client, n_center;
         char mesg_client[BUFSIZ], mesg_center[BUFSIZ];
         char mesg[BUFSIZ];
+        int user_index;
         
         /* 네트워크 주소 출력 */
         inet_ntop(AF_INET, &clientaddr.sin_addr, mesg, BUFSIZ);
@@ -150,11 +152,13 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
                     printf("통신 서버 : %s\n", mesg_client);
                     /* 클라이언트에서 받은 데이터 중앙 서버로 전송 */
                     if (strncmp(mesg_client, "LOGIN", 5) == 0) {
-                        printf("로그인\n");
                         user user;
                         char result[BUFSIZ];
                         get_user_from_string(mesg_client, &user);
-                        if (login_user(&user)) {
+
+                        user_index = login_user(&user);
+                        printf("%d, %s %s\n", user_index, user.username, user.password);
+                        if (user_index >= 0) {
                             strcpy(result, "SUCCESS");
                         }
                         else {
@@ -163,11 +167,12 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
                         write(csock, result, BUFSIZ);
                     }
                     else if (strncmp(mesg_client, "REGISTER", 8) == 0) {
-                        printf("회원가입\n");
                         user user;
                         char result[BUFSIZ];
                         get_user_from_string(mesg_client, &user);
-                        if (register_user(&user)) {
+
+                        user_index = register_user(&user);
+                        if (user_index >= 0) {
                             save_user_data(&user);
                             strcpy(result, "SUCCESS");
                         }
@@ -175,6 +180,10 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
                             strcpy(result, "FAIL");
                         }
                         write(csock, result, BUFSIZ);
+                    }
+                    else if (strncmp(mesg_client, "LOGOUT", 6) == 0) {
+                        connected_user[user_index] = 0;
+                        user_index = -1;
                     }
                     else {
                         kill(getppid(), SIGUSR1);

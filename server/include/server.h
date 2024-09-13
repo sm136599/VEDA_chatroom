@@ -4,11 +4,10 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 
-#define MAX_CLIENT_NO   50  
-#define TCP_PORT        5125
+#define MAX_CLIENT_NO       50  
+#define TCP_PORT            5125
 #define MAX_USERNAME_LENGTH 32
 #define MAX_PASSWORD_LENGTH 32
-#define USER_DATA_PATH  "data.txt"
 
 typedef struct {
     int pid;
@@ -27,6 +26,7 @@ extern int client_num;
 extern connecting_server servers[MAX_CLIENT_NO];
 extern int user_count;
 extern user users[1024];
+extern int connected_user[1024];
 
 void init_server();
 void run_server();

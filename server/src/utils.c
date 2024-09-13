@@ -1,3 +1,4 @@
+#include "server.h"
 #include "utils.h"
 #include <fcntl.h>
 #include <stdio.h>
@@ -5,8 +6,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
-
-user users[1024];
 
 void set_nonblock(int fd) {
     int flags = fcntl(fd, F_GETFL);
@@ -44,7 +43,9 @@ void load_data() {
         return;
     }
     else {
-        while(fscanf(stdin, "%s %s", users[user_count].username, users[user_count].password) != EOF) {
+        fseek(user_data, 0, 0);
+        while(fscanf(user_data, "%s %s", users[user_count].username, users[user_count].password) != EOF) {
+            connected_user[user_count] = 0;
             user_count++;
         }
         fclose(user_data);
@@ -63,26 +64,31 @@ void save_user_data(user* user) {
 }
 
 int login_user(user* user) {
+    /* 로그인 성공 시 저장된 유저의 index 반환 */
     /* 유저 찾기 */
     for (int i = 0; i < user_count; i++) {
-        if (strcmp(user->username, users[i].username) == 0 && 
-            strcmp(user->password, users[i].password) == 0) {
-            return 1;   // success
+        if (connected_user[i]) continue;
+        if ((strcmp(user->username, users[i].username) == 0) && 
+            (strcmp(user->password, users[i].password) == 0)) {
+            connected_user[i] = 1;
+            return i;   // success
         }
     }
-    return 0;           // fail
+    return -1;           // fail
 }
 
 int register_user(user* user) {
     /* 같은 아이디 유저 찾기 */
+    printf("user_count : %d\n", user_count);
     for (int i = 0; i < user_count; i++) {
         if (strcmp(user->username, users[i].username) == 0) {
-            return 0;   // fail
+            return -1;   // fail
         }
     }
+    connected_user[user_count] = 1;
     strcpy(users[user_count].username, user->username);
     strcpy(users[user_count].password, user->password);
-    return 1;           // success
+    return user_count++;           // success
 }
 
 void get_user_from_string(const char* string, user* user) {
