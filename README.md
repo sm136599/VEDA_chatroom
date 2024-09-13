@@ -1,2 +1,7 @@
 # VEDA_chatroom
-Implementation of chat room in VEDA
+채팅방 프로그램
+
+
+## 서버 실행파일
+```
+git clone 
