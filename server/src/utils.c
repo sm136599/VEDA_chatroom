@@ -12,6 +12,11 @@ void set_nonblock(int fd) {
     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
+void set_block(int fd) {
+    int flags = fcntl(fd, F_GETFL);
+    fcntl(fd, F_SETFL, flags | ~O_NONBLOCK);
+}
+
 void make_daemon() {
     /* 데몬 만들기 */
     int pid;
@@ -38,6 +43,7 @@ void make_daemon() {
 }
 
 void load_data() {
+    /* 유저 데이터 정보 저장 */
     FILE* user_data = fopen("data.txt", "r");
     if (user_data == NULL) {
         return;
@@ -53,6 +59,7 @@ void load_data() {
 }
 
 void save_user_data(user* user) {
+    /* 유저 데이터 정보 저장 */
     FILE* user_data = fopen("data.txt", "a");
     if (user_data == NULL) {
         perror("fopen failed");
@@ -65,33 +72,33 @@ void save_user_data(user* user) {
 
 int login_user(user* user) {
     /* 로그인 성공 시 저장된 유저의 index 반환 */
-    /* 유저 찾기 */
     for (int i = 0; i < user_count; i++) {
         if (connected_user[i]) continue;
         if ((strcmp(user->username, users[i].username) == 0) && 
             (strcmp(user->password, users[i].password) == 0)) {
             connected_user[i] = 1;
-            return i;   // success
+            return i;       // success
         }
     }
-    return -1;           // fail
+    return -1;              // fail
 }
 
 int register_user(user* user) {
-    /* 같은 아이디 유저 찾기 */
+    /* 회원 가입 성공 시 해당 유저의 index 반환*/
     printf("user_count : %d\n", user_count);
     for (int i = 0; i < user_count; i++) {
         if (strcmp(user->username, users[i].username) == 0) {
-            return -1;   // fail
+            return -1;      // fail
         }
     }
     connected_user[user_count] = 1;
     strcpy(users[user_count].username, user->username);
     strcpy(users[user_count].password, user->password);
-    return user_count++;           // success
+    return user_count++;    // success
 }
 
 void get_user_from_string(const char* string, user* user) {
+    /* 로그인과 회원가입 신호 처리 */
     char* sep = strchr(string, ':');
     char* ampersand_pos = strchr(string, '&');
     strncpy(user->username, sep + 1, ampersand_pos - sep - 1);

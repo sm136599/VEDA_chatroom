@@ -3,6 +3,7 @@
 #include "server.h"
 
 void set_nonblock(int fd);
+void set_block(int fd);
 void make_daemon();
 void load_data();
 void save_user_data(user* user);
