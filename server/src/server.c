@@ -23,7 +23,7 @@ user users[1024];
 int connected_user[1024];
 
 void init_server() {
-    // make_daemon();
+    make_daemon();
     load_data();
 }
 
