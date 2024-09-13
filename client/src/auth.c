@@ -28,7 +28,7 @@ int register_user(int ssock, user* user) {
     memset(auth_text, 0, BUFSIZ);
     
     /* 회원가입 인증 텍스트 만들기 */
-    strcat(auth_text, "RESGISTER:");
+    strcat(auth_text, "REGISTER:");
     strcat(auth_text, user->username);
     strcat(auth_text, "&");
     strcat(auth_text, user->password);

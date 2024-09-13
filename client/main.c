@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
     /* 화면 처리 */
     int cmd;
     while (1) {
+        //system("clear");
         printf("--------------\n");
         printf("1. 로그인\n");
         printf("2. 회원가입\n");
@@ -29,18 +30,13 @@ int main(int argc, char** argv) {
         case 1:
             get_user_info(&user);
             if (login(ssock, &user)) run_client(ssock, user.username);
-            else {
-                close(ssock);
-            }
             break;
         case 2:
             get_user_info(&user);
             if (register_user(ssock, &user)) run_client(ssock, user.username);
-            else {
-                close(ssock);
-            }
             break;
         case 9:
+            close(ssock);
             return 0;
             break;
         default:

@@ -38,9 +38,10 @@ void run_server() {
 
     while (1) {
         int csock = accept(ssock, (struct sockaddr*)&clientaddr, &clen);
+        usleep(100);
 
         if (csock == -1) {
-            if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
+            if (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
                 perror("accept failed");
                 break;
             }
@@ -52,6 +53,7 @@ void run_server() {
         /* 통신 서버의 입력을 받는다. */
         for (int i = 0; i < client_num; i++) {
             n = read(servers[i].from_connecting_to_center_pipe[0], mesg, BUFSIZ);
+            usleep(100);
             if (n < 0) {
                 if (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
                     perror("read failed");
@@ -129,10 +131,11 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
 
         while (1) {
             n_client = read(csock, mesg_client, BUFSIZ);
+            usleep(100);
 
             /* 클라이언트에서 입력 받은 신호 처리 */
             if (n_client < 0) {
-                if (!(errno == EAGAIN || errno == EWOULDBLOCK)) {
+                if (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
                     perror("read failed");
                     exit(EXIT_FAILURE);
                 }
@@ -147,6 +150,7 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
                     printf("통신 서버 : %s\n", mesg_client);
                     /* 클라이언트에서 받은 데이터 중앙 서버로 전송 */
                     if (strncmp(mesg_client, "LOGIN", 5) == 0) {
+                        printf("로그인\n");
                         user user;
                         char result[BUFSIZ];
                         get_user_from_string(mesg_client, &user);
@@ -159,6 +163,7 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
                         write(csock, result, BUFSIZ);
                     }
                     else if (strncmp(mesg_client, "REGISTER", 8) == 0) {
+                        printf("회원가입\n");
                         user user;
                         char result[BUFSIZ];
                         get_user_from_string(mesg_client, &user);
@@ -181,7 +186,7 @@ void handle_child_process(int csock, struct sockaddr_in clientaddr) {
             /* 중앙 서버에서 입력 받은 신호 처리 */
             while (data_from_center) {
                 n_center = read(servers[my_num].from_center_to_connecting_pipe[0], mesg_center, BUFSIZ);
-                data_from_center = 0;
+                usleep(100);
                 if (n_center < 0) {
                     if (!(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)) {
                         perror("read failed");

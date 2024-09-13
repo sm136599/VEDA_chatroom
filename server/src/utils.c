@@ -41,13 +41,14 @@ void make_daemon() {
 void load_data() {
     FILE* user_data = fopen("data.txt", "r");
     if (user_data == NULL) {
-        perror("fopen failed");
-        exit(EXIT_FAILURE);
+        return;
     }
     else {
-        while(fscanf(stdin, "%s %s", users[user_count].username, users[user_count].password) != EOF) user_count++;
+        while(fscanf(stdin, "%s %s", users[user_count].username, users[user_count].password) != EOF) {
+            user_count++;
+        }
+        fclose(user_data);
     }
-    fclose(user_data);
 }
 
 void save_user_data(user* user) {
@@ -57,7 +58,8 @@ void save_user_data(user* user) {
         exit(EXIT_FAILURE);
     }
 
-    fprintf(user_data, "%s %s", user->username, user->password);
+    fprintf(user_data, "%s %s\n", user->username, user->password);
+    fclose(user_data);
 }
 
 int login_user(user* user) {
@@ -86,6 +88,6 @@ int register_user(user* user) {
 void get_user_from_string(const char* string, user* user) {
     char* sep = strchr(string, ':');
     char* ampersand_pos = strchr(string, '&');
-    strncpy(user->username, sep + 1, ampersand_pos - sep);
+    strncpy(user->username, sep + 1, ampersand_pos - sep - 1);
     strcpy(user->password, ampersand_pos + 1);
 }
