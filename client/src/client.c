@@ -23,11 +23,12 @@ void run_client(int ssock, const char* username) {
 void handle_parent_process(int pid, int ssock, const char* username) {
     /* 부모 프로세스 
        키보드에서 입력 받아 서버로 데이터 전송*/
-    char mesg[BUFSIZ];
+    char mesg[BUFSIZ - 50];
+    char post_mesg[BUFSIZ];
     
     while (1) {
-        memset(mesg, 0, BUFSIZ);
-        fgets(mesg, BUFSIZ, stdin);
+        memset(mesg, 0, BUFSIZ - 50);
+        fgets(mesg, BUFSIZ - 50, stdin);
         mesg[strlen(mesg) - 1] = '\0';
 
         if (strncmp(mesg, "logout", 6) == 0) {
@@ -38,7 +39,8 @@ void handle_parent_process(int pid, int ssock, const char* username) {
             break;
         }
 
-        if (send(ssock, mesg, BUFSIZ, MSG_DONTWAIT) <= 0) { 
+        sprintf(post_mesg, "[ %s ] %s", username, mesg);
+        if (send(ssock, post_mesg, BUFSIZ, MSG_DONTWAIT) <= 0) { 
             perror("send failed");
             exit(EXIT_FAILURE);
         }
