@@ -11,13 +11,12 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    setup_signal_handlers();
+    //setup_signal_handlers();
     int ssock = create_client_socket(argv[1]);
     /* 화면 처리 */
     int cmd;
     while (1) {
-        //system("clear");
-        printf("--------------\n");
+        printf("----------------------------\n");
         printf("1. 로그인\n");
         printf("2. 회원가입\n");
         printf("9. 종료\n");
@@ -29,11 +28,26 @@ int main(int argc, char** argv) {
         {
         case 1:
             get_user_info(&user);
-            if (login(ssock, &user)) run_client(ssock, user.username);
+            if (login(ssock, &user)) {
+                printf("로그인 성공!\n");
+                printf("----------------------------\n");
+                run_client(ssock, user.username);
+            }
+            else {
+                printf("아이디와 비밀번호를 확인해주세요.\n");
+            }
             break;
         case 2:
             get_user_info(&user);
-            if (register_user(ssock, &user)) run_client(ssock, user.username);
+            if (register_user(ssock, &user)) {
+                printf("회원 가입 성공!\n");
+                printf("채팅방으로 바로 접속됩니다.\n");
+                printf("----------------------------\n");
+                run_client(ssock, user.username);
+            }
+            else {
+                printf("다른 아이디로 생성해주세요.\n");
+            }
             break;
         case 9:
             close(ssock);
